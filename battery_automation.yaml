@@ -1,0 +1,151 @@
+alias: Battery automation
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.amber_5min_current_general_price
+  - trigger: state
+    entity_id:
+      - sensor.amber_5min_current_general_price
+    attribute: estimate
+    enabled: false
+conditions:
+  - alias: Estimate is false
+    condition: template
+    value_template: >-
+      {{ state_attr('sensor.amber_5min_current_general_price', 'estimate') |
+      lower == 'false' }}
+actions:
+  - alias: Update battery logs
+    action: input_text.set_value
+    metadata: {}
+    data:
+      value: >-
+        Estimate is {{state_attr('sensor.amber_5min_current_general_price', 'estimate')}}. Price is ${{states('sensor.amber_5min_current_general_price')}}
+    target:
+      entity_id: input_text.battery_logs
+  - alias: HWS
+    choose:
+      - conditions:
+          - condition: device
+            type: is_on
+            device_id: 56cb67666da5c1198ed7433cdfd1848b
+            entity_id: 736571ffc4b1f641bf4f8dc430f15f7d
+            domain: switch
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_general_price
+            above: input_number.import_threshold
+        sequence:
+          - action: switch.turn_off
+            metadata: {}
+            target:
+              entity_id: switch.shellyem3_c8c9a33d3fed
+            data: {}
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: select
+            entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
+            type: select_option
+            option: Maximum Self Consumption
+          - stop: ""
+      - conditions:
+          - condition: device
+            type: is_on
+            device_id: 56cb67666da5c1198ed7433cdfd1848b
+            entity_id: 736571ffc4b1f641bf4f8dc430f15f7d
+            domain: switch
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_general_price
+            above: 0
+        sequence:
+          - stop: ""
+  - alias: Battery
+    choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_general_price
+            below: 0
+        sequence:
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: number
+            entity_id: d98b6f15ddbce298e2443d2748b5e84d
+            type: set_value
+            value: 8
+          - action: switch.toggle
+            metadata: {}
+            target:
+              entity_id: switch.enable_import
+            data: {}
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_feed_in_price
+            above: input_number.export_threshold
+          - condition: numeric_state
+            entity_id: sensor.sigen_inverter_battery_state_of_charge
+            above: input_number.export_soc_cutoff
+        sequence:
+          - action: switch.turn_on
+            metadata: {}
+            target:
+              entity_id: switch.enable_export
+            data: {}
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_general_price
+            above: input_number.import_threshold
+        sequence:
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: select
+            entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
+            type: select_option
+            option: Maximum Self Consumption
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.sigen_inverter_battery_state_of_charge
+            above: 99.9
+          - condition: numeric_state
+            entity_id: sensor.amber_5min_current_feed_in_price
+            below: 0
+        sequence:
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: number
+            entity_id: 23c3d1ebb47e254117749ed124c62386
+            type: set_value
+            value: 3
+      - conditions:
+          - condition: device
+            device_id: 86e19221913a174b89459183a075b0e0
+            domain: select
+            entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
+            type: selected_option
+            option: Command Charging (PV First)
+          - condition: template
+            value_template: >-
+              {{ (states('sensor.sigen_plant_battery_state_of_charge') | float / 100) * (states('sensor.sigen_plant_rated_energy_capacity') | float)  
+              +
+              (states('sensor.solcast_pv_forecast_forecast_remaining_today') | float)/2 
+              < 
+              (states('sensor.sigen_plant_rated_energy_capacity') |float) }}
+          - condition: time
+            after: "09:00:00"
+            before: "21:00:00"
+        sequence:
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: number
+            entity_id: d98b6f15ddbce298e2443d2748b5e84d
+            type: set_value
+            value: 5
+          - device_id: 86e19221913a174b89459183a075b0e0
+            domain: select
+            entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
+            type: select_option
+            option: Command Charging (PV First)
+    default:
+      - device_id: 86e19221913a174b89459183a075b0e0
+        domain: select
+        entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
+        type: select_option
+        option: Maximum Self Consumption
+        enabled: true
+mode: single
+trace:
+  stored_traces: 20
