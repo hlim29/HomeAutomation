@@ -1,0 +1,321 @@
+views:
+  - type: masonry
+    path: home
+    title: Home
+    cards:
+      - type: vertical-stack
+        cards:
+          - type: entities
+            entities:
+              - entity: switch.enable_import
+              - entity: number.sigen_plant_ess_max_charging_limit
+                name:
+                  type: entity
+          - type: entities
+            entities:
+              - entity: switch.enable_export
+              - entity: number.sigen_plant_grid_export_limitation
+                name:
+                  type: entity
+          - type: entities
+            entities:
+              - entity: number.sigen_plant_pv_max_power_limit
+          - type: horizontal-stack
+            cards:
+              - type: horizontal-stack
+                cards:
+                  - type: custom:button-card
+                    entity: switch.shellyem3_hws
+                    section_mode: true
+                    size: 15%
+                    label: |
+                      [[[
+                        var bri = states['switch.shellyem3_hws'].state;
+                        var wattage = states['sensor.shellyem3_hws_phase_a_power'].state;
+                        return wattage + ' W';
+                      ]]]
+                    show_label: true
+                  - type: tile
+                    entity: timer.ems_timer
+                    vertical: false
+                    features_position: bottom
+          - type: entities
+            entities:
+              - entity: input_number.import_threshold
+                name:
+                  type: entity
+              - entity: input_number.export_threshold
+              - entity: input_number.export_soc_cutoff
+          - type: logbook
+            target:
+              entity_id:
+                - select.sigen_plant_remote_ems_control_mode
+      - type: vertical-stack
+        cards:
+          - type: custom:apexcharts-card
+            update_interval: 30sec
+            experimental:
+              hidden_by_default: true
+            apex_config:
+              legend:
+                show: false
+              chart:
+                height: auto
+            header:
+              show: true
+              show_states: true
+              colorize_states: true
+            graph_span: 24h
+            span:
+              start: minute
+              offset: '-24h'
+            all_series_config:
+              stroke_width: 2
+            yaxis:
+              - id: power
+                min: -4
+                max: 10
+                decimals: 0
+                apex_config:
+                  title:
+                    text: Power (kW)
+                  forceNiceScale: true
+                  tick_amount: 4
+              - id: soc
+                min: -100
+                max: 100
+                decimals: 0
+                apex_config:
+                  title:
+                    text: Battery State of Charge
+                  opposite: true
+                  forceNiceScale: true
+                  tick_amount: 4
+            series:
+              - entity: sensor.sigen_plant_grid_active_power
+                curve: straight
+                type: area
+                color: '#f0f'
+                group_by:
+                  func: avg
+                  duration: 1m
+                extend_to: false
+                show:
+                  in_header: false
+                  legend_value: false
+                unit: kW
+                yaxis_id: power
+              - entity: sensor.sigen_plant_pv_power
+                curve: straight
+                type: area
+                color: '#fc0'
+                group_by:
+                  func: avg
+                  duration: 1m
+                extend_to: false
+                show:
+                  in_header: false
+                  legend_value: false
+                unit: kW
+                yaxis_id: power
+              - entity: sensor.sigen_plant_battery_power
+                curve: straight
+                type: area
+                color: '#00f'
+                group_by:
+                  func: avg
+                  duration: 1m
+                extend_to: false
+                show:
+                  in_header: false
+                  legend_value: false
+                unit: kW
+                yaxis_id: power
+              - entity: sensor.sigen_plant_battery_state_of_charge
+                curve: straight
+                type: line
+                color: '#f00'
+                group_by:
+                  func: avg
+                  duration: 1m
+                extend_to: false
+                show:
+                  in_header: false
+                  legend_value: false
+                unit: '%'
+                yaxis_id: soc
+          - type: custom:apexcharts-card
+            header:
+              show: true
+              title: Amber Electric Price Forecasts
+              show_states: false
+            graph_span: 1h
+            apex_config:
+              legend:
+                show: false
+            span:
+              offset: +55m
+            yaxis:
+              - id: cost
+                apex_config:
+                  forceNiceScale: true
+            series:
+              - entity: sensor.amber_billing_interval_forecasts_general_price
+                name: Buy price
+                yaxis_id: cost
+                type: column
+                float_precision: 2
+                show:
+                  datalabels: true
+                data_generator: |
+                  const forecasts = entity.attributes.Forecasts;
+                  const result = forecasts.map(e => [
+                    new Date(e.start_time).getTime(),
+                    parseFloat(e.per_kwh || 0)
+                  ]);
+                  return result;
+              - entity: sensor.amber_billing_interval_forecasts_feed_in_price
+                name: Sell price
+                type: column
+                yaxis_id: cost
+                float_precision: 2
+                data_generator: |
+                  const forecasts = entity.attributes.Forecasts;
+                  const result = forecasts.map(e => [
+                    new Date(e.start_time).getTime(),
+                    parseFloat(e.spot_per_kwh || 0)
+                  ]);
+                  return result;
+          - type: custom:apexcharts-card
+            graph_span: 12h
+            span:
+              start: hour
+              offset: '-6h'
+            header:
+              show: true
+              title: Amber Electric Price Forecasts
+              show_states: false
+            now:
+              show: true
+              label: Now
+            apex_config:
+              float_precision: 2
+              legend:
+                show: false
+              tooltip:
+                enabled: true
+                x:
+                  format: dd MMM yyyy, HH:mm:00
+            all_series_config:
+              stroke_width: 1.5
+            yaxis:
+              - id: first
+                decimals: 2
+            series:
+              - entity: sensor.amber_5min_forecasts_general_price
+                type: line
+                color: '#44739e'
+                name: Buy Price c/kWh
+                extend_to: now
+              - entity: sensor.amber_30min_forecasts_general_price
+                type: line
+                color: '#44739e'
+                name: Buy Price c/kWh
+                stroke_dash: 4
+                float_precision: 2
+                data_generator: |
+                  const forecasts = entity.attributes.Forecasts;
+                  const result = forecasts.map(e => [
+                    new Date(e.start_time).getTime(),
+                    parseFloat(e.per_kwh || 0)
+                  ]);
+                  return result;
+              - entity: sensor.amber_billing_interval_forecasts_general_price
+                type: line
+                color: orange
+                stroke_dash: 4
+                name: FIT Price c/kWh
+                float_precision: 2
+                data_generator: |
+                  const forecasts = entity.attributes.Forecasts;
+                  const result = forecasts.map(e => [
+                    new Date(e.start_time).getTime(),
+                    parseFloat(e.spot_per_kwh || 0) 
+                  ]);
+                  return result;
+              - entity: sensor.amber_5min_forecasts_feed_in_price
+                type: line
+                color: orange
+                name: FIT Price c/kWh
+                extend_to: now
+      - type: vertical-stack
+        cards:
+          - type: energy-distribution
+          - type: energy-sankey
+    badges:
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: select.sigen_plant_remote_ems_control_mode
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.sigen_inverter_battery_state_of_charge
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.sigen_plant_third_party_pv_power
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.sigen_plant_consumed_power
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.sigen_inverter_battery_power
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.sigen_plant_grid_active_power
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.amber_5min_current_general_price
+        name:
+          type: entity
+        state_content:
+          - state
+          - last_changed
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.amber_5min_current_feed_in_price
+        name:
+          type: entity
+      - type: entity
+        show_name: true
+        show_state: true
+        show_icon: true
+        entity: sensor.solcast_pv_forecast_forecast_remaining_today
+        name:
+          type: entity
