@@ -4,11 +4,6 @@ triggers:
   - trigger: state
     entity_id:
       - sensor.amber_5min_current_general_price
-  - trigger: state
-    entity_id:
-      - sensor.amber_5min_current_general_price
-    attribute: estimate
-    enabled: false
 conditions:
   - alias: Estimate is false
     condition: template
@@ -21,7 +16,9 @@ actions:
     metadata: {}
     data:
       value: >-
-        Estimate is {{state_attr('sensor.amber_5min_current_general_price', 'estimate')}}. Price is ${{states('sensor.amber_5min_current_general_price')}}
+        Estimate is {{state_attr('sensor.amber_5min_current_general_price',
+        'estimate')}}. Price is
+        ${{states('sensor.amber_5min_current_general_price')}}
     target:
       entity_id: input_text.battery_logs
   - alias: HWS
@@ -69,7 +66,7 @@ actions:
             domain: number
             entity_id: d98b6f15ddbce298e2443d2748b5e84d
             type: set_value
-            value: 8
+            value: 10
           - action: switch.toggle
             metadata: {}
             target:
@@ -111,6 +108,7 @@ actions:
             entity_id: 23c3d1ebb47e254117749ed124c62386
             type: set_value
             value: 3
+            enabled: false
       - conditions:
           - condition: device
             device_id: 86e19221913a174b89459183a075b0e0
@@ -120,11 +118,18 @@ actions:
             option: Command Charging (PV First)
           - condition: template
             value_template: >-
-              {{ (states('sensor.sigen_plant_battery_state_of_charge') | float / 100) * (states('sensor.sigen_plant_rated_energy_capacity') | float)  
-              +
-              (states('sensor.solcast_pv_forecast_forecast_remaining_today') | float)/2 
-              < 
-              (states('sensor.sigen_plant_rated_energy_capacity') |float) }}
+              {{ 
+
+              ((states('sensor.sigen_plant_available_max_discharging_capacity')
+              | float)  
+
+              + ((states('sensor.solcast_pv_forecast_forecast_remaining_today')
+              | float)/3) 
+
+              )
+
+              < (states('sensor.sigen_plant_rated_energy_capacity') | float) }}
+            enabled: true
           - condition: time
             after: "09:00:00"
             before: "21:00:00"
@@ -134,11 +139,19 @@ actions:
             entity_id: d98b6f15ddbce298e2443d2748b5e84d
             type: set_value
             value: 5
+            enabled: false
           - device_id: 86e19221913a174b89459183a075b0e0
             domain: select
             entity_id: 53c16c1a25daf2ba6677b9fbea37a0cf
             type: select_option
             option: Command Charging (PV First)
+      - conditions:
+          - condition: state
+            entity_id: timer.ems_timer
+            state:
+              - active
+        sequence:
+          - stop: ""
     default:
       - device_id: 86e19221913a174b89459183a075b0e0
         domain: select
@@ -146,6 +159,11 @@ actions:
         type: select_option
         option: Maximum Self Consumption
         enabled: true
+      - device_id: 86e19221913a174b89459183a075b0e0
+        domain: number
+        entity_id: 23c3d1ebb47e254117749ed124c62386
+        type: set_value
+        value: 10
 mode: single
 trace:
   stored_traces: 20

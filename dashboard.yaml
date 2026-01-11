@@ -212,7 +212,7 @@ views:
               - id: first
                 decimals: 2
             series:
-              - entity: sensor.amber_5min_forecasts_general_price
+              - entity: sensor.amber_5min_current_general_price
                 type: line
                 color: '#44739e'
                 name: Buy Price c/kWh
@@ -243,7 +243,7 @@ views:
                     parseFloat(e.spot_per_kwh || 0) 
                   ]);
                   return result;
-              - entity: sensor.amber_5min_forecasts_feed_in_price
+              - entity: sensor.amber_5min_current_feed_in_price
                 type: line
                 color: orange
                 name: FIT Price c/kWh
