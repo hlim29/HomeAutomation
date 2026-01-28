@@ -217,6 +217,7 @@ views:
                 color: '#44739e'
                 name: Buy Price c/kWh
                 extend_to: now
+                float_precision: 2
               - entity: sensor.amber_30min_forecasts_general_price
                 type: line
                 color: '#44739e'
@@ -230,7 +231,7 @@ views:
                     parseFloat(e.per_kwh || 0)
                   ]);
                   return result;
-              - entity: sensor.amber_billing_interval_forecasts_general_price
+              - entity: sensor.amber_30min_forecasts_feed_in_price
                 type: line
                 color: orange
                 stroke_dash: 4
@@ -248,6 +249,7 @@ views:
                 color: orange
                 name: FIT Price c/kWh
                 extend_to: now
+                float_precision: 2
       - type: vertical-stack
         cards:
           - type: energy-distribution
