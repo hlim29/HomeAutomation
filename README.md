@@ -18,8 +18,8 @@ This project contains Home Assistant configurations that automatically manage ba
 
 ### Home Assistant Integrations
 - [Amber Electric Integration](https://www.home-assistant.io/integrations/amberelectric/)
-- [Sigenergy Integration](https://github.com/TypQxQ/HASS-Sigenergy)
-- [Solcast PV Forecast](https://github.com/oziee/ha-solcast-solar)
+- [Sigenergy Integration](https://github.com/TypQxQ/Sigenergy-Local-Modbus)
+- [Solcast PV Forecast](https://github.com/BJReplay/ha-solcast-solar)
 - Shelly Integration
 
 ### Custom Cards (for Dashboard)
