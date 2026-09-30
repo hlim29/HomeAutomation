@@ -1,0 +1,60 @@
+alias: Globird daily schedule
+description: "Combined Globird schedule: import 11:00-14:00, export 18:00-20:00"
+triggers:
+  - trigger: time
+    at: "11:00:00"
+    id: import_start
+  - trigger: time
+    at: "14:00:00"
+    id: reset_afternoon
+  - trigger: time
+    at: "18:00:00"
+    id: export_start
+  - trigger: time
+    at: "20:00:00"
+    id: reset_evening
+conditions: []
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: import_start
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.enable_import
+          - action: number.set_value
+            target:
+              entity_id: number.sigen_plant_ess_max_charging_limit
+            data:
+              value: "10"
+          - action: switch.turn_on
+            target:
+              entity_id: switch.shellyem3_c8c9a33d3fed
+            data: {}
+            enabled: true
+      - conditions:
+          - condition: trigger
+            id: export_start
+            enabled: true
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.enable_export
+            enabled: false
+          - action: number.set_value
+            target:
+              entity_id: number.sigen_plant_grid_export_limitation
+            data:
+              value: "1.33"
+            enabled: false
+    default:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.enable_export
+        data: {}
+      - action: switch.turn_off
+        target:
+          entity_id: switch.enable_import
+        data: {}
+mode: single

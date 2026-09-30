@@ -1,10 +1,13 @@
-# Home Automation - Sigenergy Battery + Amber Electric
+# Home Automation - Sigenergy Battery (Amber Electric / GloBird)
 
-Home Assistant automation and dashboard configurations for optimising a Sigenergy battery system with Amber Electric's dynamic pricing.
+Home Assistant automation and dashboard configurations for optimising a Sigenergy battery system. There are two automation variants, one per electricity retailer:
+
+- **Amber Electric**: reacts to real-time wholesale pricing
+- **GloBird**: runs on a fixed daily time-of-use schedule
 
 ## Overview
 
-This project contains Home Assistant configurations that automatically manage battery charging/discharging based on real-time electricity prices from Amber Electric. The goal is to maximise savings by:
+This project contains Home Assistant configurations that automatically manage battery charging/discharging. The Amber variant responds to real-time electricity prices from Amber Electric; the GloBird variant switches modes at set times of day. The goal is to maximise savings by:
 
 - **Charging** the battery when prices are low or negative
 - **Discharging/Exporting** when feed-in prices are high
@@ -17,7 +20,7 @@ This project contains Home Assistant configurations that automatically manage ba
 - Shelly EM3 (for hot water system control)
 
 ### Home Assistant Integrations
-- [Amber Electric Integration](https://www.home-assistant.io/integrations/amberelectric/)
+- [Amber Electric Integration](https://www.home-assistant.io/integrations/amberelectric/) (Amber variant only)
 - [Sigenergy Integration](https://github.com/TypQxQ/Sigenergy-Local-Modbus)
 - [Solcast PV Forecast](https://github.com/BJReplay/ha-solcast-solar)
 - Shelly Integration
@@ -31,7 +34,8 @@ This project contains Home Assistant configurations that automatically manage ba
 
 | File | Description |
 |------|-------------|
-| `battery_automation.yaml` | Main automation logic for battery control |
+| `amber/battery_automation.yaml` | Price-driven battery control for Amber Electric |
+| `globird/battery_automation.yaml` | Time-scheduled battery control for GloBird |
 | `dashboard.yaml` | Lovelace dashboard configuration |
 
 ## Configuration
@@ -55,7 +59,7 @@ Create the following input helpers in Home Assistant:
 | `switch.enable_import` | Toggle to enable grid charging |
 | `switch.enable_export` | Toggle to enable battery export |
 
-## Automation Logic
+## Automation Logic (Amber)
 
 ### Triggers
 - Amber Electric 5-minute price updates (non-estimate values only)
@@ -73,6 +77,19 @@ Create the following input helpers in Home Assistant:
 ### Hot Water System Control
 - Automatically turns off HWS when import prices exceed threshold
 - Prevents unnecessary grid consumption during expensive periods
+
+## Automation Logic (GloBird)
+
+`globird/battery_automation.yaml` is a single automation ("Globird daily schedule") driven by time triggers. It does not depend on the Amber integration or the price threshold helpers.
+
+| Time | Action |
+|------|--------|
+| **11:00** | Enable grid import (`switch.enable_import`), set max charging limit to 10kW, turn on the hot water system |
+| **14:00** | Turn off import and export |
+| **18:00** | Export window start (the export actions are currently disabled in the YAML) |
+| **20:00** | Turn off import and export |
+
+To use the evening export window, enable the `switch.enable_export` and `number.sigen_plant_grid_export_limitation` actions in the `export_start` branch.
 
 ## Dashboard Features
 
@@ -102,17 +119,17 @@ The dashboard provides:
 
 ## Installation
 
-1. Copy `battery_automation.yaml` to your Home Assistant automations
-2. Create required input helpers
-3. Update device IDs to match your Sigenergy inverter
+1. Copy the automation for your retailer (`amber/battery_automation.yaml` or `globird/battery_automation.yaml`) to your Home Assistant automations
+2. Create required input helpers and switches (the GloBird variant only needs the switches)
+3. Update device and entity IDs to match your Sigenergy inverter and Shelly device
 4. Copy `dashboard.yaml` to your Lovelace configuration
 5. Install required custom cards via HACS
 
 ## Notes
 
-- The automation only triggers on actual prices (not estimates) to avoid erratic behaviour
-- A timer (`timer.ems_timer`) can be used to temporarily override automation
-- Trace logging is enabled with 20 stored traces for debugging
+- The Amber automation only triggers on actual prices (not estimates) to avoid erratic behaviour
+- A timer (`timer.ems_timer`) can be used to temporarily override the Amber automation
+- Trace logging (Amber automation) is enabled with 20 stored traces for debugging
 
 ## License
 
