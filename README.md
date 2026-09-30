@@ -24,11 +24,14 @@ This project contains Home Assistant configurations that automatically manage ba
 - [Sigenergy Integration](https://github.com/TypQxQ/Sigenergy-Local-Modbus)
 - [Solcast PV Forecast](https://github.com/BJReplay/ha-solcast-solar)
 - Shelly Integration
+- [EMHASS](https://github.com/davidusb-geek/emhass) (GloBird dashboard only, for the Energy Plan view, `sensor.mpc_*`)
 
 ### Custom Cards (for Dashboard)
 - [ApexCharts Card](https://github.com/RomRider/apexcharts-card)
 - [Button Card](https://github.com/custom-cards/button-card)
-- Energy Sankey (optional)
+- [Multiple Entity Row](https://github.com/benct/lovelace-multiple-entity-row) (GloBird dashboard only)
+- [Power Flow Card Plus](https://github.com/flixlix/power-flow-card-plus) (GloBird dashboard only)
+- [Energy Sankey](https://github.com/MindFreeze/ha-sankey-chart) (optional)
 
 ## Files
 
@@ -36,7 +39,8 @@ This project contains Home Assistant configurations that automatically manage ba
 |------|-------------|
 | `amber/battery_automation.yaml` | Price-driven battery control for Amber Electric |
 | `globird/battery_automation.yaml` | Time-scheduled battery control for GloBird |
-| `dashboard.yaml` | Lovelace dashboard configuration |
+| `amber/dashboard.yaml` | Lovelace dashboard for the Amber setup |
+| `globird/dashboard.yaml` | Lovelace dashboard for the GloBird setup |
 
 ## Configuration
 
@@ -93,36 +97,50 @@ To use the evening export window, enable the `switch.enable_export` and `number.
 
 ## Dashboard Features
 
-The dashboard provides:
+Each retailer folder has its own `dashboard.yaml`.
 
-1. **Control Panel**
-   - Import/Export switches
-   - Charging and export power limits
-   - Price thresholds adjustment
-   - EMS timer status
+### Amber (`amber/dashboard.yaml`)
 
-2. **Power Flow Charts**
-   - 24-hour history of grid, PV, and battery power
-   - Battery state of charge
+A single **Home** view:
 
-3. **Price Forecasts**
-   - Amber Electric buy/sell price forecasts
-   - Current and predicted prices over 12 hours
+- Import/Export switches, charging and export limits
+- Hot water system toggle with live power draw (`switch.shellyem3_hws`)
+- Price threshold helpers (import threshold, export threshold, export SOC cutoff)
+- EMS control mode logbook
+- 24-hour history of grid, PV, and battery power plus battery SOC
+- Amber Electric price forecasts: a 1-hour billing interval column chart and a 12-hour buy/feed-in price line chart
+- Energy distribution and Sankey cards
+- Status badges: EMS mode, battery SOC, PV, consumption, battery and grid power, current Amber buy and feed-in prices, Solcast remaining forecast
 
-4. **Status Badges**
-   - Current EMS mode
-   - Battery SOC
-   - PV power
-   - Grid power
-   - Current Amber prices
-   - Solcast remaining forecast
+### GloBird (`globird/dashboard.yaml`)
+
+Doesn't reference any Amber sensors or price thresholds on its main view. Views:
+
+1. **Home**
+   - Import/Export switches, with the export limit shown inline via Multiple Entity Row
+   - Hot water system toggle with live power draw (`switch.shellyem3`)
+   - EMS control mode logbook
+   - 24-hour history of grid, PV, and battery power plus battery SOC (legend shown, series can be toggled)
+   - Solcast forecasts and per-circuit power from Shelly meters
+   - Energy distribution and Sankey cards
+   - Status badges: EMS mode, battery SOC, PV, consumption, battery and grid power, Solcast remaining forecast, available discharge capacity
+
+2. **Energy Plan**
+   - 24-hour EMHASS forecast of PV, load, grid, battery power and SOC
+   - Forecast buy/sell prices and deferrable load schedule
+
+3. **Sigenergy views** (Home, EMS Control, All Sigenergy provided parameters, Calculated attributes)
+   - Power, daily and total energy, EMS settings, ESS limits, alarms and all raw Sigenergy sensor values
+
+4. **test**
+   - Work-in-progress section with price threshold helpers and a Power Flow Card Plus
 
 ## Installation
 
 1. Copy the automation for your retailer (`amber/battery_automation.yaml` or `globird/battery_automation.yaml`) to your Home Assistant automations
 2. Create required input helpers and switches (the GloBird variant only needs the switches)
-3. Update device and entity IDs to match your Sigenergy inverter and Shelly device
-4. Copy `dashboard.yaml` to your Lovelace configuration
+3. Update device and entity IDs to match your Sigenergy inverter and Shelly device (the two dashboards use different Shelly entity names)
+4. Copy the matching `dashboard.yaml` to your Lovelace configuration
 5. Install required custom cards via HACS
 
 ## Notes
